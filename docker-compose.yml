@@ -1,0 +1,93 @@
+services:
+  backend-dev:
+    profiles: ["dev"]
+    build:
+      context: ./back
+    command: npm run start:dev
+    environment:
+      PORT: "3000"
+      DB_PATH: /data/db.sqlite
+      CHOKIDAR_USEPOLLING: "1"
+    volumes:
+      - ./back:/app
+      - /app/node_modules
+      - backend_data:/data
+    ports:
+      - "3000:3000"
+
+  frontend-dev:
+    profiles: ["dev"]
+    build:
+      context: ./front
+    command: npm run dev
+    environment:
+      BACKEND_URL: http://backend-dev:3000
+      CHOKIDAR_USEPOLLING: "1"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend-dev
+
+  pipeline-dev:
+    profiles: ["dev"]
+    build:
+      context: ./pipeline/placas-model
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      MODEL_PATH: /app/models/runs/yolov8n_lp/weights/best.pt
+      BACKEND_URL: http://backend-dev:3000/cars/detect
+      AUTO_REGISTER: "true"
+      EASYOCR_GPU: "0"
+    volumes:
+      - ./pipeline/placas-model:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - backend-dev
+
+  backend-test:
+    profiles: ["test"]
+    build:
+      context: ./back
+    command: npm run start
+    environment:
+      PORT: "3000"
+      DB_PATH: /data/db.test.sqlite
+    volumes:
+      - backend_test_data:/data
+    ports:
+      - "3000:3000"
+
+  frontend-test:
+    profiles: ["test"]
+    build:
+      context: ./front
+    command: sh -c "npm run build && npm run start"
+    environment:
+      BACKEND_URL: http://backend-test:3000
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend-test
+
+  pipeline-test:
+    profiles: ["test"]
+    build:
+      context: ./pipeline/placas-model
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    environment:
+      MODEL_PATH: /app/models/runs/yolov8n_lp/weights/best.pt
+      BACKEND_URL: http://backend-test:3000/cars/detect
+      AUTO_REGISTER: "true"
+      EASYOCR_GPU: "0"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - backend-test
+
+volumes:
+  backend_data:
+  backend_test_data:

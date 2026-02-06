@@ -1,0 +1,18 @@
+### Registrar veiculo
+POST http://localhost:3000/cars/detect
+Content-Type: application/json
+
+{
+  "trackId": 9,
+  "plate": "ACD2222"
+}
+
+### Consultar veiculo
+GET http://localhost:3000/cars/ABC1234
+
+
+###Liberar passagem
+POST http://localhost:3000/cars/ABC1234/release
+
+###listar todos os carros
+GET http://localhost:3000/cars
