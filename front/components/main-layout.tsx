@@ -1,12 +1,12 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-
 import type React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Car, LayoutDashboard, Menu } from "lucide-react"
+import { Car, LayoutDashboard, Menu, ShieldAlert } from "lucide-react"
+import { cn } from "@/lib/utils"
+
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
@@ -31,6 +31,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       active: pathname === "/live",
     },
     {
+      title: "Revisao portaria",
+      href: "/review",
+      icon: ShieldAlert,
+      active: pathname === "/review",
+    },
+    {
       title: "Dashboard",
       href: "/dashboard",
       icon: LayoutDashboard,
@@ -41,10 +47,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
-        {/* Desktop Sidebar */}
         <Sidebar className="hidden md:flex">
           <SidebarHeader className="flex items-center px-4 py-2">
-            <h2 className="text-xl font-bold">Aranouá Gate</h2>
+            <h2 className="text-xl font-bold">Automatic Gate</h2>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
@@ -61,11 +66,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="px-4 py-2">
-            <p className="text-xs text-muted-foreground">© 2025 Aranouá Gate UI</p>
+            <p className="text-xs text-muted-foreground">© 2026 Automatic Gate UI</p>
           </SidebarFooter>
         </Sidebar>
 
-        {/* Mobile Sidebar */}
         <Sheet>
           <SheetTrigger asChild className="md:hidden absolute top-4 left-4">
             <Button variant="outline" size="icon">
@@ -76,7 +80,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <SheetContent side="left" className="w-64 p-0">
             <div className="flex flex-col h-full">
               <div className="p-4 border-b">
-                <h2 className="text-xl font-bold">Aranouá Gate</h2>
+                <h2 className="text-xl font-bold">Automatic Gate</h2>
               </div>
               <div className="flex-1 overflow-auto py-2">
                 <nav className="grid gap-1 px-2">
@@ -96,13 +100,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </nav>
               </div>
               <div className="p-4 border-t">
-                <p className="text-xs text-muted-foreground">© 2025 Aranouá UI</p>
+                <p className="text-xs text-muted-foreground">© 2026 Automatic Gate UI</p>
               </div>
             </div>
           </SheetContent>
         </Sheet>
 
-        {/* Main Content */}
         <div className="flex-1 md:ml-64">
           <div className="md:hidden h-16" />
           {children}

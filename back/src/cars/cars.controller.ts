@@ -1,58 +1,90 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Param,
-  Body,
   HttpCode,
   HttpStatus,
-  NotFoundException,
+  Param,
+  Post,
+  Query,
 } from '@nestjs/common';
-import { CarsService } from './cars.service';
-import { CreateCarDto } from './dto/create-car.dto';
 import { CarDto } from './dto/car.dto';
+import { CreateCarDto } from './dto/create-car.dto';
+import { PaginatedCarsDto } from './dto/paginated-cars.dto';
+import { ReviewQueryDto } from './dto/review-query.dto';
+import { Car, CarReviewStatus } from './entities/car.entity';
+import { CarsService } from './cars.service';
 
 @Controller('cars')
 export class CarsController {
   constructor(private readonly carsService: CarsService) {}
 
-  // 1) Detecção / registro
   @Post('detect')
   @HttpCode(HttpStatus.OK)
-  async detect(@Body() dto: CreateCarDto): Promise<{ message: string }> {
-    const { plate } = dto;
-    let message: string;
-
-    try {
-      await this.carsService.findByPlate(plate);
-      message = `Placa ${plate} já cadastrada`;
-    } catch (err) {
-      if (err instanceof NotFoundException) {
-        await this.carsService.create(dto);
-        message = `Placa ${plate} cadastrada com sucesso`;
-      } else {
-        throw err;
-      }
-    }
-
-    return { message };
-  }
-
-  // 2) Consulta por placa
-  @Get(':plate')
-  async getByPlate(@Param('plate') plate: string): Promise<CarDto> {
-    const car = await this.carsService.findByPlate(plate);
+  async detect(@Body() dto: CreateCarDto): Promise<{
+    allowed: boolean;
+    status: CarReviewStatus;
+    message: string;
+    car: CarDto;
+  }> {
+    const result = await this.carsService.detectAtGate(dto);
     return {
-      id: car.id,
-      plate: car.plate,
-      trackId: car.trackId,
-      registered: car.registered,
-      createdAt: car.createdAt,
-      updatedAt: car.updatedAt,
+      allowed: result.allowed,
+      status: result.status,
+      message: result.message,
+      car: this.toDto(result.car),
     };
   }
 
-  // 3) Liberação
+  @Get('review')
+  async listReview(@Query() query: ReviewQueryDto): Promise<PaginatedCarsDto> {
+    const result = await this.carsService.findReviewQueue(query);
+    return {
+      data: result.data.map((car) => this.toDto(car)),
+      meta: result.meta,
+    };
+  }
+
+  @Post(':plate/approve')
+  @HttpCode(HttpStatus.OK)
+  async approve(@Param('plate') plate: string): Promise<{
+    allowed: boolean;
+    status: CarReviewStatus;
+    message: string;
+    car: CarDto;
+  }> {
+    const car = await this.carsService.approveByPlate(plate);
+    return {
+      allowed: true,
+      status: car.reviewStatus,
+      message: `Placa ${car.plate} cadastrada e liberada para entrada.`,
+      car: this.toDto(car),
+    };
+  }
+
+  @Post(':plate/reject')
+  @HttpCode(HttpStatus.OK)
+  async reject(@Param('plate') plate: string): Promise<{
+    allowed: boolean;
+    status: CarReviewStatus;
+    message: string;
+    car: CarDto;
+  }> {
+    const car = await this.carsService.rejectByPlate(plate);
+    return {
+      allowed: false,
+      status: car.reviewStatus,
+      message: `Placa ${car.plate} recusada na portaria.`,
+      car: this.toDto(car),
+    };
+  }
+
+  @Get(':plate')
+  async getByPlate(@Param('plate') plate: string): Promise<CarDto> {
+    const car = await this.carsService.findByPlate(plate);
+    return this.toDto(car);
+  }
+
   @Post(':plate/release')
   @HttpCode(HttpStatus.OK)
   async release(@Param('plate') plate: string): Promise<{ allowed: boolean }> {
@@ -60,17 +92,22 @@ export class CarsController {
     return { allowed: true };
   }
 
-  // 4) Listar todos os veículos
   @Get()
   async listAll(): Promise<CarDto[]> {
     const cars = await this.carsService.findAll();
-    return cars.map((car) => ({
+    return cars.map((car) => this.toDto(car));
+  }
+
+  private toDto(car: Car): CarDto {
+    return {
       id: car.id,
       plate: car.plate,
       trackId: car.trackId,
       registered: car.registered,
+      released: car.released,
+      reviewStatus: car.reviewStatus,
       createdAt: car.createdAt,
       updatedAt: car.updatedAt,
-    }));
+    };
   }
 }

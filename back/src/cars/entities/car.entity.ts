@@ -6,6 +6,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum CarReviewStatus {
+  PENDING_REVIEW = 'PENDING_REVIEW',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
 @Entity('cars')
 export class Car {
   @PrimaryGeneratedColumn()
@@ -22,6 +28,12 @@ export class Car {
 
   @Column({ default: false })
   released: boolean;
+
+  @Column({
+    type: 'varchar',
+    default: CarReviewStatus.PENDING_REVIEW,
+  })
+  reviewStatus: CarReviewStatus;
 
   @CreateDateColumn()
   createdAt: Date;
