@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Optional, Tuple, Dict, Any
 
 import cv2
@@ -46,6 +47,9 @@ DICT_CHAR_TO_INT = {
 
 DICT_INT_TO_CHAR = {v: k for k, v in DICT_CHAR_TO_INT.items()}
 
+PATTERN_OLD = re.compile(r"^[A-Z]{3}\\d{4}$")
+PATTERN_MERCOSUL = re.compile(r"^[A-Z]{3}\\d[A-Z]\\d{2}$")
+
 
 @app.get("/health")
 def health() -> Dict[str, str]:
@@ -56,7 +60,7 @@ def health() -> Dict[str, str]:
 async def detect(
     image: UploadFile = File(...),
     trackId: Optional[int] = Form(None),
-    register: Optional[bool] = Form(None),
+    register_flag: Optional[bool] = Form(None, alias="register"),
 ) -> Dict[str, Any]:
     img_bytes = await image.read()
     np_img = np.frombuffer(img_bytes, np.uint8)
@@ -85,7 +89,7 @@ async def detect(
 
     payload = None
     backend_response = None
-    should_register = register if register is not None else AUTO_REGISTER
+    should_register = register_flag if register_flag is not None else AUTO_REGISTER
     if should_register and plate:
         payload = {
             "trackId": int(trackId or 0),
@@ -143,53 +147,50 @@ def read_license_plate(license_plate_crop: np.ndarray) -> Tuple[Optional[str], O
         return None, None
 
     processed = preprocess(license_plate_crop)
-    detections = reader.readtext(processed)
+    detections = reader.readtext(processed, detail=1)
 
     best_text = None
     best_score = None
     for _bbox, text, score in detections:
-        text = text.upper().replace(" ", "")
-        if license_complies_format(text):
-            formatted = format_license(text)
+        plate = normalize_plate(text)
+        if plate:
             if best_score is None or score > best_score:
-                best_text = formatted
+                best_text = plate
                 best_score = float(score)
 
     return best_text, best_score
 
 
-def license_complies_format(text: str) -> bool:
-    if len(text) != 7:
-        return False
+def normalize_plate(text: str) -> Optional[str]:
+    if not text:
+        return None
 
-    return (
-        (text[0] in DICT_INT_TO_CHAR or text[0].isalpha())
-        and (text[1] in DICT_INT_TO_CHAR or text[1].isalpha())
-        and (text[2] in DICT_CHAR_TO_INT or text[2].isdigit())
-        and (text[3] in DICT_CHAR_TO_INT or text[3].isdigit())
-        and (text[4] in DICT_INT_TO_CHAR or text[4].isalpha())
-        and (text[5] in DICT_INT_TO_CHAR or text[5].isalpha())
-        and (text[6] in DICT_INT_TO_CHAR or text[6].isalpha())
-    )
+    cleaned = re.sub(r"[^A-Za-z0-9]", "", text.upper().replace(" ", ""))
+    if cleaned.startswith("BR"):
+        cleaned = cleaned[2:]
+
+    if len(cleaned) != 7:
+        return None
+
+    candidate_old = apply_mapping(cleaned, letter_positions={0, 1, 4, 5, 6}, digit_positions={2, 3})
+    if PATTERN_OLD.fullmatch(candidate_old):
+        return candidate_old
+
+    candidate_mercosul = apply_mapping(cleaned, letter_positions={0, 1, 2, 4}, digit_positions={3, 5, 6})
+    if PATTERN_MERCOSUL.fullmatch(candidate_mercosul):
+        return candidate_mercosul
+
+    return None
 
 
-def format_license(text: str) -> str:
-    license_plate = ""
-    mapping = {
-        0: DICT_INT_TO_CHAR,
-        1: DICT_INT_TO_CHAR,
-        4: DICT_INT_TO_CHAR,
-        5: DICT_INT_TO_CHAR,
-        6: DICT_INT_TO_CHAR,
-        2: DICT_CHAR_TO_INT,
-        3: DICT_CHAR_TO_INT,
-    }
-    for idx in range(7):
-        if text[idx] in mapping[idx]:
-            license_plate += mapping[idx][text[idx]]
-        else:
-            license_plate += text[idx]
-    return license_plate
+def apply_mapping(text: str, letter_positions: set, digit_positions: set) -> str:
+    chars = list(text)
+    for i, ch in enumerate(chars):
+        if i in letter_positions:
+            chars[i] = DICT_INT_TO_CHAR.get(ch, ch)
+        elif i in digit_positions:
+            chars[i] = DICT_CHAR_TO_INT.get(ch, ch)
+    return "".join(chars)
 
 
 def post_detection(payload: Dict[str, Any]) -> Dict[str, Any]:
