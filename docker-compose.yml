@@ -19,13 +19,14 @@ services:
     profiles: ["dev"]
     build:
       context: ./front
-    command: npm run dev
+    command: sh -c "find .next -mindepth 1 -maxdepth 1 -exec rm -rf {} + || true; npm run dev"
     environment:
       BACKEND_URL: http://backend-dev:3000
       CHOKIDAR_USEPOLLING: "1"
     volumes:
       - ./front:/app
       - /app/node_modules
+      - /app/.next
     ports:
       - "3001:3000"
     depends_on:

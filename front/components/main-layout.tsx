@@ -49,13 +49,18 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen">
         <Sidebar className="hidden md:flex">
           <SidebarHeader className="flex items-center px-4 py-2">
-            <h2 className="text-xl font-bold">Automatic Gate</h2>
+            <h2 className="text-2xl font-bold">Automatic Gate</h2>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={item.active}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={item.active}
+                    size="lg"
+                    className="text-base [&>svg]:size-5"
+                  >
                     <Link href={item.href}>
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
@@ -66,7 +71,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="px-4 py-2">
-            <p className="text-xs text-muted-foreground">© 2026 Automatic Gate UI</p>
+            <p className="text-sm text-muted-foreground">© 2026 Automatic Gate UI</p>
           </SidebarFooter>
         </Sidebar>
 
@@ -80,7 +85,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <SheetContent side="left" className="w-64 p-0">
             <div className="flex flex-col h-full">
               <div className="p-4 border-b">
-                <h2 className="text-xl font-bold">Automatic Gate</h2>
+                <h2 className="text-2xl font-bold">Automatic Gate</h2>
               </div>
               <div className="flex-1 overflow-auto py-2">
                 <nav className="grid gap-1 px-2">
@@ -89,7 +94,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-base font-medium",
                         item.active ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                       )}
                     >
@@ -100,7 +105,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </nav>
               </div>
               <div className="p-4 border-t">
-                <p className="text-xs text-muted-foreground">© 2026 Automatic Gate UI</p>
+                <p className="text-sm text-muted-foreground">© 2026 Automatic Gate UI</p>
               </div>
             </div>
           </SheetContent>

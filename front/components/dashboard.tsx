@@ -121,14 +121,14 @@ export function Dashboard() {
       </Card>
 
       {/* gráficos */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Veículos por Dia</CardTitle>
             <CardDescription>Contagem diária</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[340px] 2xl:h-[380px]">
               <ChartContainer config={{ vehicles: { label: "Veículos" } }}>
                 <BarChart data={chartData}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -148,7 +148,7 @@ export function Dashboard() {
             <CardDescription>Soma acumulada</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[340px] 2xl:h-[380px]">
               <ChartContainer config={{ cumulative: { label: "Acumulado" } }}>
                 <LineChart data={chartData}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
